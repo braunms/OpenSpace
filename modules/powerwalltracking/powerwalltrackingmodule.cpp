@@ -48,7 +48,7 @@
  *
  * 1) Start 'Motive' software on NatNet server 'mini'
  * 2) Start VRPN server on VRPN server 'mini' (C:\vrpn\start64.bat)
- * 3) Start this test program: .\test.exe
+ * 3) Start OpenSpace with PowerwallTrackingModule enabled
  *
  ******************************************************************************/
  /// Info: Powerwall Resolution: 10.800 x 4.096 pixel | Aspect Ratio: 2,64
@@ -63,23 +63,23 @@ namespace openspace {
     }
 
     PowerwallTrackingModule::~PowerwallTrackingModule() {
+
         // intentionally left empty
     }
 
     void PowerwallTrackingModule::internalInitialize(const ghoul::Dictionary& dict) {
 
-        
-        // PARAMETERS for Tracker and TrackingUtilizer /////////////////////////////
+        // TRACKING INITIALISATION ////////////////////////////////////////////////
 
         /// Tracker Parameters
         tracking::Tracker::Params tp;
         std::string active_node = ""; // Allowing all clients to access tracking data
         tp.active_node = active_node.c_str();
         tp.active_node_len = active_node.length();
-        std::string client_ip = "129.69.205.123"; // TODO: Change to appropriate Client IP (.76 = MINYOU)
+        std::string client_ip = "129.69.205.47"; // TODO: Change to appropriate Client IP (205.76 = MINYOU)
         tp.natnet_params.client_ip = client_ip.c_str();
         tp.natnet_params.client_ip_len = client_ip.length();
-        std::string server_ip = "129.69.205.86"; // (.86 = MINI)
+        std::string server_ip = "129.69.205.86"; // (205.86 = MINI)
         tp.natnet_params.server_ip = server_ip.c_str();
         tp.natnet_params.server_ip_len = server_ip.length();
         tp.natnet_params.cmd_port = 1510;
@@ -102,6 +102,28 @@ namespace openspace {
 
         tp.vrpn_params = bps.data();
         tp.vrpn_params_count = bps.size();
+
+        /// ----- Tracker -----
+        /*
+        // Handles all communication with NatNet and VRPN.
+        // Creating one (!) Tracker which runs separate thread for receiving tracking data.
+        auto tracker = std::make_shared<tracking::Tracker>();
+        if (!tracker->Initialise(tp)) {
+            std::cerr << std::endl << "[ERROR] [test] Unable to initialise <Tracker>. " << "[" << __FILE__ << ", " << __FUNCTION__ << ", line " << __LINE__ << "]" << std::endl << std::endl;
+            return 1;
+        }
+        if (!tracker->Connect()) {
+            std::cerr << std::endl << "[ERROR] [test] Failed to establish <Tracker> connection. " << "[" << __FILE__ << ", " << __FUNCTION__ << ", line " << __LINE__ << "]" << std::endl << std::endl;
+            return 1;
+        }
+        size_t rigiBodyCount = tracker->GetRigidBodyCount();
+        std::vector<std::string> rigidBodies;
+        for (size_t i = 0; i < rigiBodyCount; i++) {
+            rigidBodies.emplace_back(std::string(tracker->GetRigidBodyName(i)));
+        }
+        */
+
+        // TRACKING UTILIZERS /////////////////////////////////////////////////////
 
         /// TrackingUtilizer Parameters
         tracking::TrackingUtilizer::Params tup;
@@ -128,51 +150,27 @@ namespace openspace {
         tup.fov_vert_angle = 30.0f;
         tup.fov_aspect_ratio = tracking::TrackingUtilizer::FovAspectRatio::AR_1_77__1; // 16:9
 
-        // TRACKING INITIALISATION ////////////////////////////////////////////////
-       
-        // --- Tracker ---
-        // Handles all communication with NatNet and VRPN.
-        // Creating one (!) Tracker which runs separate thread for receiving tracking data.
-        auto tracker = std::make_shared<tracking::Tracker>();
-        if (!tracker->Initialise(tp)) {
-            std::cerr << std::endl << "[ERROR] [test] Unable to initialise <Tracker>. " << "[" << __FILE__ << ", " << __FUNCTION__ << ", line " << __LINE__ << "]" << std::endl << std::endl;
-            ///return 1;
-        }
-        /*
-        if (!tracker->Connect()) {
-            std::cerr << std::endl << "[ERROR] [test] Failed to establish <Tracker> connection. " << "[" << __FILE__ << ", " << __FUNCTION__ << ", line " << __LINE__ << "]" << std::endl << std::endl;
-            ///return 1;
-        }
-        size_t rigiBodyCount = tracker->GetRigidBodyCount();
-        std::vector<std::string> rigidBodies;
-        for (size_t i = 0; i < rigiBodyCount; i++) {
-            rigidBodies.emplace_back(std::string(tracker->GetRigidBodyName(i)));
-        }
-        */
-
-        // --- TrackingUtilizers ---
+        /// ----- Tracking Utilizers -----
         // Manage tracking data for one rigid body each.
         // Creating a TrackingUtilizer for each found rigid body (and corresponding button device).
         // Initialising TrackingUtilizer with exisiting Tracker.
+        /*
         std::vector<tracking::TrackingUtilizer> utilizers;
         utilizers.clear();
-        /*
         for (auto& rb : rigidBodies) {
             tup.rigid_body_name = rb.c_str();
             tup.rigid_body_name_len = rb.length();
             utilizers.emplace_back(tracking::TrackingUtilizer());
             if (!utilizers.back().Initialise(tup, tracker)) {
                 std::cerr << std::endl << "[ERROR] [test] Failed to initialise <TrackingUtilizer>. " << "[" << __FILE__ << ", " << __FUNCTION__ << ", line " << __LINE__ << "]" << std::endl << std::endl;
-                ///return 1;
+                return 1;
 
             }
         }
         */
 
         // LOOP ///////////////////////////////////////////////////////////////////
-
         /*
-        
         unsigned int btn;
         float pos_x, pos_y, pos_z;
         float orient_x, orient_y, orient_z, orient_w;
@@ -219,7 +217,6 @@ namespace openspace {
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
         */
-
     }
 
 } // namespace openspace
