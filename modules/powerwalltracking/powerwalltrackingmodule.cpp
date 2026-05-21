@@ -74,26 +74,20 @@ namespace openspace {
         /// Tracker Parameters
         tracking::Tracker::Params tp;
         std::string active_node = ""; // Allowing all clients to access tracking data
-        tp.active_node = active_node.c_str();
-        tp.active_node_len = active_node.length();
-        std::string client_ip = "129.69.205.47"; // TODO: Change to appropriate Client IP (205.76 = MINYOU)
-        tp.natnet_params.client_ip = client_ip.c_str();
-        tp.natnet_params.client_ip_len = client_ip.length();
-        std::string server_ip = "129.69.205.86"; // (205.86 = MINI)
-        tp.natnet_params.server_ip = server_ip.c_str();
-        tp.natnet_params.server_ip_len = server_ip.length();
+        tp.active_node = active_node;
+        std::string client_ip = "129.69.205.76"; // = MINYOU
+        tp.natnet_params.client_ip = client_ip;
+        std::string server_ip = "129.69.205.86"; // = MINI
+        tp.natnet_params.server_ip = server_ip;
         tp.natnet_params.cmd_port = 1510;
         tp.natnet_params.data_port = 1511;
         tp.natnet_params.con_type = tracking::NatNetDevicePool::ConnectionType::UniCast;
-        tp.natnet_params.verbose_client = false;
+        tp.natnet_params.verbose_client = true;
 
         tracking::VrpnDevice<vrpn_Button_Remote>::Params bp;
-        std::string device_name = "ControlBox"; // Leave empty to disable use of VRPN device
-        bp.device_name = device_name.c_str();
-        bp.device_name_len = device_name.length();
-        std::string server_name = "mini";
-        bp.server_name = server_name.c_str();
-        bp.server_name_len = server_name.length();
+        const std::string device_name = "ControlBox"; // Leave empty to disable use of VRPN device
+        bp.device_name = device_name;
+        bp.server_ip = server_ip;
         bp.port = 3884;
         bp.protocol = tracking::VrpnDevice<vrpn_Button_Remote>::Protocols::VRPN_TCP;
 
@@ -127,11 +121,8 @@ namespace openspace {
 
         /// TrackingUtilizer Parameters
         tracking::TrackingUtilizer::Params tup;
-        tup.rigid_body_name = nullptr; // Will be set in line 108 depending on what rigid bodies are available.
-        tup.rigid_body_name_len = 0;
-        device_name = bp.device_name; // Insert bp.device_name only for rigid body you want to use it.
-        tup.btn_device_name = device_name.c_str();
-        tup.btn_device_name_len = device_name.length();
+        tup.rigid_body_name = ""; // Will be set in line 116 depending on what rigid bodies are available.
+        tup.btn_device_name = device_name; // Insert bp.device_name only for rigid body you want to use.
         tup.select_btn = 0;
         tup.rotate_btn = 1;
         tup.translate_btn = 2;
@@ -149,17 +140,21 @@ namespace openspace {
         tup.fov_horiz_angle = 60.0f;
         tup.fov_vert_angle = 30.0f;
         tup.fov_aspect_ratio = tracking::TrackingUtilizer::FovAspectRatio::AR_1_77__1; // 16:9
+        tup.physical_height = 2.4f;
+        tup.physical_width = 6.0f;
+        tup.physical_origin = glm::vec3(-3.0f, 0.3f, 0.0f);
+        tup.physical_x_dir = glm::vec3(1.0f, 0.0f, 0.0f);
+        tup.physical_y_dir = glm::vec3(0.0f, 1.0f, 0.0f);
 
         /// ----- Tracking Utilizers -----
+        /*
         // Manage tracking data for one rigid body each.
         // Creating a TrackingUtilizer for each found rigid body (and corresponding button device).
         // Initialising TrackingUtilizer with exisiting Tracker.
-        /*
         std::vector<tracking::TrackingUtilizer> utilizers;
         utilizers.clear();
         for (auto& rb : rigidBodies) {
-            tup.rigid_body_name = rb.c_str();
-            tup.rigid_body_name_len = rb.length();
+            tup.rigid_body_name = rb;
             utilizers.emplace_back(tracking::TrackingUtilizer());
             if (!utilizers.back().Initialise(tup, tracker)) {
                 std::cerr << std::endl << "[ERROR] [test] Failed to initialise <TrackingUtilizer>. " << "[" << __FILE__ << ", " << __FUNCTION__ << ", line " << __LINE__ << "]" << std::endl << std::endl;
@@ -175,7 +170,7 @@ namespace openspace {
         float pos_x, pos_y, pos_z;
         float orient_x, orient_y, orient_z, orient_w;
         float inters_x, inters_y;
-        bool state;
+        bool btn_state, rb_state;
 
         bool exit = false;
         while (!exit) {
@@ -184,27 +179,34 @@ namespace openspace {
             for (auto& tu : utilizers) {
 
                 // Button State
-                state = tu.GetRawData(btn, pos_x, pos_y, pos_z, orient_x, orient_y, orient_z, orient_w);
-                std::cout << std::fixed << std::setprecision(4) <<
-                    "[INFO] [test] BUTTON-DEVICE \"" << tu.GetButtonDeviceName() << "\" - STATE (valid = "
-                    << ((state) ? ("TRUE") : ("FALSE")) << ") ";
-                if (state) {
-                    std::cout << " - " << btn;
-                }
-                std::cout << std::endl;
-
+                btn_state = tu.GetRawData(btn, pos_x, pos_y, pos_z, orient_x, orient_y, orient_z, orient_w);
                 // Intersection
-                state = tu.GetIntersection(inters_x, inters_y);
-                std::cout << std::fixed << std::setprecision(4) <<
-                    "[INFO] [test] RIGID-BODY \"" << tu.GetRigidBodyName() << "\" - INTERSECTION (valid = "
-                    << ((state) ? ("TRUE") : ("FALSE")) << ") ";
-                if (state) {
-                    std::cout << " - Coordinates: (" << inters_x << "," << inters_y << ") ";
+                rb_state = tu.GetIntersection(inters_x, inters_y);
+
+                if (rb_state) {
+
+                    std::cout << "[INFO][test] UTILIZER ------------------------------------------------------------ " << std::endl;
+
+                    std::cout << std::fixed << std::setprecision(4) <<
+                        "[INFO] [test] BUTTON-DEVICE \"" << tu.GetButtonDeviceName() << "\" - BUTTON PRESSED (valid = "
+                        << ((btn_state) ? ("TRUE") : ("FALSE")) << ") ";
+                    if (btn_state) {
+                        std::cout << " | Button: " << btn;
+                    }
+                    std::cout << std::endl;
+
+                    std::cout << std::fixed << std::setprecision(4) <<
+                        "[INFO] [test] RIGID-BODY \"" << tu.GetRigidBodyName() << "\" - INTERSECTION (valid = "
+                        << ((rb_state) ? ("TRUE") : ("FALSE")) << ") ";
+                    if (rb_state) {
+                        std::cout << " | Intersection Coordinates: (" << inters_x << "," << inters_y << ") ";
+                    }
+                    std::cout << std::endl;
+
+                    std::cout << " ----------------------------------------------------------------------------- " << std::endl;
                 }
-                std::cout << std::endl;
 
             }
-            std::cout << std::endl;
 
             // Wait for user input (press 'ESC') to end loop
             std::cout << "[Press 'ESC' to exit program]" << std::endl << std::endl;

@@ -57,11 +57,11 @@ if (WIN32)
 
   target_link_libraries(${powerwalltracking_module} PRIVATE tracking vrpn pwtglm natnet)
 
-  set(TRACKING_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/ext/powerwall-tracking/tracking/conf/tracking.conf")
+  set(TRACKING_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/ext/powerwall-tracking/tracking/config/tracking.cfg")
   add_custom_command(TARGET ${powerwalltracking_module} POST_BUILD  
       COMMAND ${CMAKE_COMMAND} -E copy  
           ${TRACKING_CONFIG_FILE}  
-          "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$(Configuration)/tracking.conf" 
+          "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$(Configuration)/tracking.cfg" 
       COMMENT "Copying tracking.conf to binary directory"  
   )  
 
