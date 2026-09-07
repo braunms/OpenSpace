@@ -25,29 +25,30 @@
 #ifndef __OPENSPACE_MODULE_POWERWALLTRACKING___POWERWALLTRACKINGMODULE___H__
 #define __OPENSPACE_MODULE_POWERWALLTRACKING___POWERWALLTRACKINGMODULE___H__
 
+
 #include <openspace/util/openspacemodule.h> 
 
-#include <openspace/properties/scalar/boolproperty.h>
-#include <openspace/properties/scalar/intproperty.h>
-#include <openspace/util/touch.h>
-#include <memory>
-#include <set>
+#include "modules/powerwalltracking/include/renderabletracking.h"
+
 
 namespace openspace {
 
-
 class PowerwallTrackingModule : public OpenSpaceModule {
 public:
+
     constexpr static const char* Name = "PowerwallTracking";
+
 
     PowerwallTrackingModule();
     ~PowerwallTrackingModule();
 
 protected:
     void internalInitialize(const ghoul::Dictionary& dictionary) override;
+    void internalDeinitialize() override;
 
 private:
 
+    RenderableTracking* _renderable_tracking;
 
 };
 
